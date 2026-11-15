@@ -1,0 +1,73 @@
+{
+  "name": "pomodoro-pill",
+  "productName": "Pomodoro Pill",
+  "version": "1.0.0",
+  "description": "Always-on-top Pomodoro timer with animated nature themes",
+  "main": "src/main.js",
+  "author": "Rahul",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable zip --x64",
+    "screenshots": "POMO_TEST=1 electron ."
+  },
+  "devDependencies": {
+    "electron": "^45.3.2",
+    "electron-builder": "^26.18.0",
+    "resedit": "^3.1.0"
+  },
+  "build": {
+    "appId": "com.rahul.pomodoropill",
+    "productName": "Pomodoro Pill",
+    "files": [
+      "src/**/*",
+      "!src/testhook.js",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "electronLanguages": [
+      "en-US"
+    ],
+    "compression": "maximum",
+    "afterPack": "build/afterPack.js",
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "artifactName": "PomodoroPill-${version}-win-x64.${ext}"
+    },
+    "portable": {
+      "artifactName": "PomodoroPill-Portable.exe"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rhlxch/pomodoro-pill.git"
+  },
+  "homepage": "https://github.com/rhlxch/pomodoro-pill",
+  "keywords": [
+    "pomodoro",
+    "timer",
+    "electron",
+    "windows",
+    "productivity",
+    "always-on-top",
+    "focus"
+  ]
+}

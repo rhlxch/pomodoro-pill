@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'">
+<title>Pomodoro Pill — Full screen</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  body { background: #05080a; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+  .vignette { position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,.45) 100%); }
+  .light .vignette { background: radial-gradient(ellipse at center, transparent 35%, rgba(120,40,70,.16) 100%); }
+  .ui { transition: opacity .6s; }
+  body.idle .ui { opacity: 0; pointer-events: none; }
+  body.idle.hidecursor, body.idle.hidecursor * { cursor: none !important; }
+
+  #center { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #dial { position: relative; width: min(64vmin, 680px); height: min(64vmin, 680px); display: grid; place-items: center; }
+  #dial > svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+  #dial circle { fill: none; }
+  #dial::before { content: ''; position: absolute; inset: 8%; border-radius: 50%; background: radial-gradient(circle, var(--shade) 0%, transparent 70%); pointer-events: none; }
+  .light #dial::before { background: radial-gradient(circle, rgba(255,240,245,.75) 0%, rgba(255,240,245,.35) 45%, transparent 70%); }
+  #dialInner { position: relative; }
+  #dial .bg { stroke: rgba(255,255,255,.14); stroke-width: 1.2; }
+  .light #dial .bg { stroke: rgba(80,20,40,.14); }
+  #dial .fg { stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; filter: drop-shadow(0 0 6px var(--accent)); transition: stroke .8s; }
+  #dial .knob { fill: var(--accent); filter: drop-shadow(0 0 8px var(--accent)); transition: fill .8s; }
+  #dialInner { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  #mode { font-size: clamp(12px, 1.7vmin, 22px); letter-spacing: .42em; text-transform: uppercase; color: var(--accent); font-weight: 600;
+    display: flex; gap: .7em; align-items: center; transition: color .8s; padding: .5em .8em .5em 1.1em; border-radius: 999px; background: var(--shade); backdrop-filter: blur(6px); }
+  #mode svg { width: 1.3em; height: 1.3em; }
+  #time { font-family: var(--display); font-weight: 300; font-size: clamp(64px, 17vmin, 230px); line-height: 1; margin: .08em 0 .1em;
+    font-variant-numeric: tabular-nums; letter-spacing: .01em; text-shadow: 0 4px 40px rgba(0,0,0,.35); }
+  .light #time { text-shadow: 0 2px 30px rgba(255,255,255,.7); }
+  #task { font-size: clamp(14px, 2.3vmin, 28px); color: var(--text); opacity: .92; max-width: 46vmin; min-height: 1.4em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text; border-bottom: 1px dashed transparent; padding: 0 .2em; }
+  #task:hover { border-bottom-color: var(--sub); }
+  #task.empty { color: var(--sub); opacity: .75; font-style: italic; }
+  #taskInput { display: none; font: clamp(14px, 2.3vmin, 28px) var(--ui); color: var(--text); text-align: center; width: 46vmin;
+    background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.3); border-radius: 10px; padding: .2em .5em; outline: none; user-select: text; }
+  .light #taskInput { background: rgba(255,255,255,.6); border-color: rgba(0,0,0,.2); }
+  .editing #task { display: none; } .editing #taskInput { display: block; }
+  #dots { display: flex; gap: .7vmin; margin-top: 2.2vmin; }
+  #dots i { width: 1.1vmin; height: 1.1vmin; min-width: 8px; min-height: 8px; border-radius: 50%; background: rgba(255,255,255,.22); }
+  .light #dots i { background: rgba(80,20,40,.16); }
+  #dots i.on { background: var(--accent-work); box-shadow: 0 0 8px var(--accent-work); }
+
+  #controls { display: flex; gap: 2.4vmin; align-items: center; margin-top: 4vmin; }
+  #controls button { width: clamp(44px, 6vmin, 72px); height: clamp(44px, 6vmin, 72px); border-radius: 50%; display: grid; place-items: center;
+    font-size: clamp(18px, 2.4vmin, 28px); background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); backdrop-filter: blur(6px);
+    transition: transform .15s, background .2s; }
+  .light #controls button { background: rgba(255,255,255,.45); border-color: rgba(80,20,40,.12); }
+  #controls button:hover { background: rgba(255,255,255,.18); transform: scale(1.06); }
+  #controls #bToggle { width: clamp(60px, 8.5vmin, 100px); height: clamp(60px, 8.5vmin, 100px); font-size: clamp(22px, 3.2vmin, 38px);
+    background: var(--accent); color: #0b1410; border: 0; box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 45%, transparent); }
+  .light #controls #bToggle { color: #fff; }
+
+  .corner { position: fixed; display: flex; align-items: center; gap: 10px; font-size: clamp(12px, 1.5vmin, 17px); color: var(--sub); }
+  #tl { left: 3vmin; top: 3vmin; }
+  #tr { right: 3vmin; top: 3vmin; }
+  #bl { left: 3vmin; bottom: 3vmin; gap: 2.4vmin; }
+  #br { right: 3vmin; bottom: 3vmin; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .chip { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(0,0,0,.22); backdrop-filter: blur(6px); }
+  .light .chip { background: rgba(255,255,255,.45); }
+  .chip svg { width: 1.2em; height: 1.2em; }
+  .chip b { color: var(--text); font-weight: 600; }
+  .iconbtn { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; color: var(--text);
+    background: rgba(0,0,0,.22); backdrop-filter: blur(6px); }
+  .light .iconbtn { background: rgba(255,255,255,.45); }
+  .iconbtn:hover { background: rgba(255,255,255,.2); }
+  #themeName { min-width: 9em; text-align: center; color: var(--text); }
+  .kbd { font-size: .8em; opacity: .7; border: 1px solid currentColor; border-radius: 5px; padding: 1px 5px; margin-left: 4px; }
+  #clock { font-family: var(--display); font-size: clamp(22px, 3.4vmin, 44px); color: var(--text); font-weight: 400; font-variant-numeric: tabular-nums; }
+  #date { font-size: clamp(11px, 1.4vmin, 16px); }
+  #banner { position: fixed; left: 50%; top: 13vh; transform: translateX(-50%) translateY(-10px); padding: 12px 22px; border-radius: 999px;
+    background: rgba(0,0,0,.45); color: #fff; font-size: clamp(14px, 2vmin, 22px); opacity: 0; transition: opacity .5s, transform .5s; backdrop-filter: blur(8px); pointer-events: none; }
+  #banner.show { opacity: 1; transform: translateX(-50%); }
+  #hint { position: fixed; left: 50%; bottom: 3vmin; transform: translateX(-50%); font-size: clamp(11px, 1.3vmin, 14px); color: var(--sub); opacity: .8; }
+
+  /* secondary monitors: ambient scene + small clock only */
+  body.secondary #center, body.secondary .corner, body.secondary #hint { display: none; }
+  #mini { display: none; position: fixed; inset: 0; place-items: center; font-family: var(--display); font-size: 8vmin; font-weight: 300; color: var(--text); opacity: .55; }
+  body.secondary #mini { display: grid; }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="vignette"></div>
+<div id="mini" class="tabnum">25:00</div>
+
+<div id="center">
+  <div id="dial">
+    <svg viewBox="0 0 200 200"><circle class="bg" cx="100" cy="100" r="96"/><circle class="fg" id="arc" cx="100" cy="100" r="96"/><circle class="knob" id="knob" r="3.2" cx="196" cy="100"/></svg>
+    <div id="dialInner">
+      <div id="mode"><span id="modeIcon"></span><span id="modeText">Focus</span></div>
+      <div id="time">25:00</div>
+      <div id="task" title="Click (or press T) to set your task"></div>
+      <input id="taskInput" maxlength="80" placeholder="What are you focusing on?" list="recent" spellcheck="false">
+      <datalist id="recent"></datalist>
+      <div id="dots"></div>
+    </div>
+  </div>
+  <div id="controls" class="ui">
+    <button id="bReset" title="Reset (R)"></button>
+    <button id="bToggle" title="Start / pause (Space)"></button>
+    <button id="bSkip" title="Skip (S)"></button>
+  </div>
+</div>
+
+<div class="corner ui" id="tl">
+  <button class="iconbtn" id="bPrev" title="Previous theme (←)"></button>
+  <span id="themeName"></span>
+  <button class="iconbtn" id="bNext" title="Next theme (→)"></button>
+</div>
+<div class="corner ui" id="tr">
+  <button class="iconbtn" id="bSettings" title="Settings"></button>
+  <button class="iconbtn" id="bExit" title="Exit full screen (Esc)"></button>
+</div>
+<div class="corner ui" id="bl">
+  <span class="chip" id="cToday"></span>
+  <span class="chip" id="cMinutes"></span>
+  <span class="chip" id="cStreak"></span>
+</div>
+<div class="corner" id="br">
+  <div id="clock" class="tabnum"></div>
+  <div id="date"></div>
+</div>
+<div id="hint" class="ui">Space start/pause · S skip · R reset · T task · ← → theme · <b>Esc</b> exit</div>
+<div id="banner"></div>
+
+<script src="icons.js"></script>
+<script src="util.js"></script>
+<script src="scene.js"></script>
+<script src="fullscreen.js"></script>
+</body>
+</html>

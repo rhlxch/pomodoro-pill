@@ -1,0 +1,21 @@
+@font-face {
+  font-family: 'Outfit';
+  src: url('../assets/outfit.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: block;
+}
+:root {
+  --accent: #b8f27c;
+  --text: #effff2;
+  --sub: #b9d8c4;
+  --shade: rgba(3, 14, 12, 0.45);
+  --ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --display: 'Outfit', 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; user-select: none; -webkit-user-select: none; }
+body { font-family: var(--ui); color: var(--text); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+svg.icon { width: 1em; height: 1em; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tabnum { font-variant-numeric: tabular-nums; }

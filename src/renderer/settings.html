@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'">
+<title>Pomodoro Pill — Settings</title>
+<link rel="stylesheet" href="common.css">
+<style>
+  :root { --bg: #0d1214; --panel: #141b1e; --panel2: #1a2327; --line: rgba(255,255,255,.08); --muted: #8fa3a8; --fg: #e8f1f0; }
+  body { background: var(--bg); color: var(--fg); display: grid; grid-template-rows: 44px 1fr; grid-template-columns: 220px 1fr; height: 100vh; }
+  #titlebar { grid-column: 1 / 3; display: flex; align-items: center; -webkit-app-region: drag; position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+  #titlebar canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .4; }
+  #titlebar .t { position: relative; padding-left: 16px; font-weight: 600; font-size: 13.5px; display: flex; gap: 10px; align-items: center; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+  #titlebar .t .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  #titlebar .win { margin-left: auto; display: flex; position: relative; -webkit-app-region: no-drag; }
+  #titlebar .win button { width: 46px; height: 44px; display: grid; place-items: center; font-size: 15px; color: #fff; }
+  #titlebar .win button:hover { background: rgba(255,255,255,.12); }
+  #titlebar .win #wClose:hover { background: #c42b1c; }
+
+  nav { background: var(--panel); border-right: 1px solid var(--line); padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; }
+  nav button { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13.5px; color: var(--muted); text-align: left; }
+  nav button svg { font-size: 17px; }
+  nav button:hover { background: rgba(255,255,255,.05); color: var(--fg); }
+  nav button.active { background: rgba(255,255,255,.08); color: var(--fg); box-shadow: inset 3px 0 0 var(--accent); }
+  nav .spacer { flex: 1; }
+  nav .ver { font-size: 11px; color: var(--muted); padding: 8px 12px; opacity: .7; }
+
+  main { overflow-y: auto; padding: 26px 32px 40px; }
+  main::-webkit-scrollbar { width: 10px; } main::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 5px; border: 3px solid var(--bg); }
+  section { display: none; max-width: 820px; } section.active { display: block; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .lead { color: var(--muted); font-size: 13px; margin: 0 0 22px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 26px 0 10px; font-weight: 600; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  .row { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--line); min-height: 60px; }
+  .row:last-child { border-bottom: 0; }
+  .row .lbl { flex: 1; } .row .lbl div { font-size: 13.5px; } .row .lbl small { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+  .stepper { display: flex; align-items: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .stepper button { width: 34px; height: 34px; font-size: 18px; color: var(--muted); }
+  .stepper button:hover { background: rgba(255,255,255,.06); color: var(--fg); }
+  .stepper input { width: 52px; text-align: center; background: none; border: 0; color: var(--fg); font: 600 15px var(--ui); outline: none; user-select: text; -moz-appearance: textfield; }
+  .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .stepper span { font-size: 12px; color: var(--muted); padding-right: 10px; }
+
+  .switch { position: relative; width: 44px; height: 24px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .switch i { position: absolute; inset: 0; border-radius: 12px; background: #3a474b; transition: background .2s; cursor: pointer; }
+  .switch i::after { content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .switch input:checked + i { background: var(--accent); }
+  .switch input:checked + i::after { transform: translateX(20px); background: #0d1214; }
+  .switch input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  input[type=range] { -webkit-appearance: none; width: 220px; height: 4px; border-radius: 2px; background: #3a474b; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 3px solid var(--bg); }
+  .rangeval { width: 46px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+
+  #themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 12px; }
+  .theme { position: relative; height: 112px; border-radius: 12px; overflow: hidden; border: 2px solid transparent; cursor: pointer; transition: transform .15s, border-color .2s; }
+  .theme:hover { transform: translateY(-2px); }
+  .theme.active { border-color: var(--accent); }
+  .theme canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .theme .name { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 12px 9px; font-size: 13px; font-weight: 600; color: #fff;
+    background: linear-gradient(transparent, rgba(0,0,0,.6)); }
+  .theme .swatch { position: absolute; right: 10px; top: 10px; display: flex; gap: 4px; }
+  .theme .swatch i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgba(0,0,0,.3); }
+
+  .hk { min-width: 170px; height: 34px; padding: 0 12px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line);
+    font: 600 13px var(--ui); color: var(--fg); display: flex; align-items: center; justify-content: center; gap: 4px; }
+  .hk.capturing { border-color: var(--accent); color: var(--accent); }
+  .hk.err { border-color: #e5484d; }
+  .hk kbd { font: inherit; padding: 2px 7px; border-radius: 5px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); }
+  .hk .none { color: var(--muted); font-weight: 400; }
+  .errtxt { color: #ff8a8e; font-size: 12px; margin-top: 3px; }
+  .btn { padding: 8px 14px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); font-size: 13px; }
+  .btn:hover { background: #222d31; }
+  .btn.danger { color: #ff8a8e; } .btn.danger.armed { background: #c42b1c; color: #fff; border-color: #c42b1c; }
+  .btn.primary { background: var(--accent); color: #0d1214; border: 0; font-weight: 600; }
+
+  /* stats */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi { padding: 16px 18px; }
+  .kpi .v { font-family: var(--display); font-size: 30px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .kpi .v small { font-size: 15px; color: var(--muted); font-weight: 400; }
+  .kpi .k { color: var(--muted); font-size: 12px; margin-top: 2px; display: flex; gap: 6px; align-items: center; }
+  .kpi .k svg { font-size: 14px; }
+  .goalbar { height: 6px; border-radius: 3px; background: #2a3538; margin-top: 10px; overflow: hidden; }
+  .goalbar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .6s; }
+  #chart { display: flex; align-items: flex-end; gap: 4px; height: 160px; padding: 20px 18px 8px; position: relative; }
+  #chart .bar { flex: 1; position: relative; height: 100%; display: flex; align-items: flex-end; }
+  #chart .bar i { display: block; width: 100%; min-height: 2px; border-radius: 4px 4px 1px 1px; background: color-mix(in srgb, var(--accent) 55%, #2a3538); transition: height .5s; }
+  #chart .bar.today i { background: var(--accent); }
+  #chart .bar:hover i { filter: brightness(1.25); }
+  #chart .bar .tip { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); background: #000; color: #fff; font-size: 11px; padding: 4px 7px; border-radius: 5px; white-space: nowrap; display: none; z-index: 2; }
+  #chart .bar:hover .tip { display: block; }
+  .axis { display: flex; justify-content: space-between; padding: 0 18px 12px; color: var(--muted); font-size: 11px; }
+  .list .item { display: flex; align-items: center; gap: 12px; padding: 11px 18px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .list .item:last-child { border-bottom: 0; }
+  .list .item .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .list .item .m { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .list .item .meter { width: 64px; flex: none; height: 5px; border-radius: 3px; background: #2a3538; overflow: hidden; }
+  .list .item .meter i { display: block; height: 100%; background: var(--accent); }
+  .empty { padding: 22px 18px; color: var(--muted); font-size: 13px; text-align: center; }
+  .grid2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+  .tip-line { color: var(--muted); font-size: 12.5px; line-height: 1.7; }
+  .tip-line kbd { font: 600 11.5px var(--ui); padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); color: var(--fg); }
+</style>
+</head>
+<body>
+<div id="titlebar">
+  <canvas id="tbScene"></canvas>
+  <div class="t"><span class="dot"></span>Pomodoro Pill</div>
+  <div class="win"><button id="wMin" title="Minimize"></button><button id="wClose" title="Close"></button></div>
+</div>
+<nav>
+  <button data-tab="timer"></button>
+  <button data-tab="appearance"></button>
+  <button data-tab="hotkeys"></button>
+  <button data-tab="stats"></button>
+  <button data-tab="general"></button>
+  <div class="spacer"></div>
+  <div class="ver">v1.0 · Pomodoro Pill</div>
+</nav>
+<main>
+  <!-- TIMER -->
+  <section id="tab-timer">
+    <h1>Timer</h1>
+    <p class="lead">Session lengths and how cycles flow. Changes apply to the next session (or right away if the current one hasn’t started).</p>
+    <div class="card">
+      <div class="row"><div class="lbl"><div>Focus</div><small>Length of one pomodoro</small></div><div class="stepper" data-key="workMin" data-min="1" data-max="180"></div></div>
+      <div class="row"><div class="lbl"><div>Short break</div></div><div class="stepper" data-key="shortMin" data-min="1" data-max="60"></div></div>
+      <div class="row"><div class="lbl"><div>Long break</div></div><div class="stepper" data-key="longMin" data-min="1" data-max="120"></div></div>
+      <div class="row"><div class="lbl"><div>Pomodoros per cycle</div><small>A long break comes after this many focus sessions</small></div><div class="stepper" data-key="cycleLength" data-min="1" data-max="12" data-unit=" "></div></div>
+      <div class="row"><div class="lbl"><div>Daily goal</div><small>Pomodoros you aim to finish each day</small></div><div class="stepper" data-key="dailyGoal" data-min="1" data-max="30" data-unit=" "></div></div>
+    </div>
+    <h2>Flow</h2>
+    <div class="card">
+      <div class="row"><div class="lbl"><div>Start breaks automatically</div><small>When a focus session ends, the break starts by itself</small></div><label class="switch"><input type="checkbox" data-key="autoStartBreaks"><i></i></label></div>
+      <div class="row"><div class="lbl"><div>Start focus automatically</div><small>When a break ends, the next pomodoro starts by itself</small></div><label class="switch"><input type="checkbox" data-key="autoStartWork"><i></i></label></div>
+      <div class="row"><div class="lbl"><div>Chime when a session ends</div><small>A soft three-note bell (the pill always pulses)</small></div><label class="switch"><input type="checkbox" data-key="chime"><i></i></label></div>
+    </div>
+  </section>
+
+  <!-- APPEARANCE -->
+  <section id="tab-appearance">
+    <h1>Appearance</h1>
+    <p class="lead">Pick a scene. It plays in the pill, in full screen, and up here.</p>
+    <div id="themes"></div>
+    <h2>Floating timer</h2>
+    <div class="card">
+      <div class="row"><div class="lbl"><div>Opacity</div><small>Also: scroll the mouse wheel over the pill, or use the opacity hotkeys</small></div>
+        <input type="range" id="opacity" min="15" max="100" step="1"><span class="rangeval" id="opacityVal"></span></div>
+      <div class="row"><div class="lbl"><div>Size</div></div>
+        <input type="range" id="scale" min="70" max="160" step="5"><span class="rangeval" id="scaleVal"></span></div>
+      <div class="row"><div class="lbl"><div>Animate the scene in the pill</div><small>Turn off for a static background and near-zero CPU use</small></div><label class="switch"><input type="checkbox" data-key="animatePill"><i></i></label></div>
+      <div class="row"><div class="lbl"><div>Click-through</div><small>Clicks pass through the pill to the app underneath. Turn off from the tray menu or the hotkey.</small></div><label class="switch"><input type="checkbox" data-key="clickThrough"><i></i></label></div>
+    </div>
+    <h2>Full screen</h2>
+    <div class="card">
+      <div class="row"><div class="lbl"><div>Cover all monitors</div><small>Other screens show the scene too, so nothing else is visible</small></div><label class="switch"><input type="checkbox" data-key="coverAllMonitors"><i></i></label></div>
+      <div class="row"><div class="lbl"><div>Hide cursor and controls when idle</div><small>After 3 seconds without moving the mouse</small></div><label class="switch"><input type="checkbox" data-key="hideCursorInFullscreen"><i></i></label></div>
+    </div>
+  </section>
+
+  <!-- HOTKEYS -->
+  <section id="tab-hotkeys">
+    <h1>Global hotkeys</h1>
+    <p class="lead">These work from any app. Click a shortcut, then press the new key combination. <kbd style="font-size:11px">Backspace</kbd> clears it, <kbd style="font-size:11px">Esc</kbd> cancels.</p>
+    <div class="card" id="hkList"></div>
+    <div style="margin-top:14px; display:flex; gap:10px;"><button class="btn" id="hkDefaults">Restore defaults</button></div>
+  </section>
+
+  <!-- STATS -->
+  <section id="tab-stats">
+    <h1>Stats</h1>
+    <p class="lead" id="statsLead">Only completed focus sessions count. Skipped or reset sessions don’t.</p>
+    <div class="kpis">
+      <div class="card kpi"><div class="v" id="kToday"></div><div class="k" id="kTodayK"></div><div class="goalbar"><i id="kGoal"></i></div></div>
+      <div class="card kpi"><div class="v" id="kMin"></div><div class="k" id="kMinK"></div></div>
+      <div class="card kpi"><div class="v" id="kStreak"></div><div class="k" id="kStreakK"></div></div>
+      <div class="card kpi"><div class="v" id="kTotal"></div><div class="k" id="kTotalK"></div></div>
+    </div>
+    <h2>Last 30 days</h2>
+    <div class="card"><div id="chart"></div><div class="axis"><span id="ax0"></span><span id="ax1"></span><span>Today</span></div></div>
+    <div class="grid2">
+      <div><h2>Today by task</h2><div class="card list" id="taskList"></div></div>
+      <div><h2>Recent sessions</h2><div class="card list" id="recentList"></div></div>
+    </div>
+    <div style="margin-top:22px;"><button class="btn danger" id="resetStats">Reset all stats</button></div>
+  </section>
+
+  <!-- GENERAL -->
+  <section id="tab-general">
+    <h1>General</h1>
+    <p class="lead">Startup and app behaviour.</p>
+    <div class="card">
+      <div class="row"><div class="lbl"><div>Start with Windows</div><small>Launch Pomodoro Pill when you sign in</small></div><label class="switch"><input type="checkbox" data-key="startWithWindows"><i></i></label></div>
+      <div class="row"><div class="lbl"><div>Quit</div><small>The app lives in the system tray (near the clock). Closing this window keeps it running.</small></div><button class="btn danger" id="quitBtn">Quit Pomodoro Pill</button></div>
+    </div>
+    <h2>Quick tips</h2>
+    <div class="card" style="padding:16px 18px;">
+      <div class="tip-line">
+        • <b>Drag</b> the pill anywhere · <b>double-click</b> the time for full screen · <b>right-click</b> for the menu<br>
+        • <b>Click the task line</b> on the pill to set what you’re working on; stats group sessions by task<br>
+        • <b>Scroll</b> over the pill to change opacity<br>
+        • In full screen: <kbd>Space</kbd> start/pause · <kbd>S</kbd> skip · <kbd>R</kbd> reset · <kbd>T</kbd> task · <kbd>←</kbd><kbd>→</kbd> theme · <kbd>Esc</kbd> exit<br>
+        • Lost the pill? Click the tray icon, or press the Show/Hide hotkey
+      </div>
+    </div>
+  </section>
+</main>
+<script src="icons.js"></script>
+<script src="util.js"></script>
+<script src="scene.js"></script>
+<script src="settings.js"></script>
+</body>
+</html>
