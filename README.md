@@ -145,4 +145,4 @@ Some design decisions:
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). The bundled [Outfit](https://github.com/Outfitio/Outfit-Fonts) font is licensed under the SIL Open Font License 1.1 ([src/assets/OFL-Outfit.txt](src/assets/OFL-Outfit.txt)).
